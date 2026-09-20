@@ -21,14 +21,14 @@ For remote terminals, you need Wi-Fi access to an SSH server and an account on t
 
 ## Install
 
-Download the `.kpkg` from [Releases](https://github.com/theblazehen/kherdr/releases). For development builds, open a successful [CI run](https://github.com/theblazehen/kherdr/actions/workflows/release.yml), download its **kherdr-kindle** artifact, and extract the `.kpkg` from the ZIP.
+Download the `.kpkg` from the [latest release](https://github.com/theblazehen/kherdr/releases/latest). For development builds, open a successful [CI run](https://github.com/theblazehen/kherdr/actions/workflows/release.yml), download its **kherdr-kindle** artifact, and extract the `.kpkg` from the ZIP.
 
 1. Back up existing kherdr settings and quit the app.
-2. Copy the `.kpkg` to the root of the Kindle's USB drive. Keep it as an archive.
+2. Rename the downloaded package to `kherdr.kpkg` and copy it to the root of the Kindle's USB drive. Keep it as an archive.
 3. Safely eject the Kindle. Enter this in the Kindle search bar:
 
    ```text
-   ;kpm install file:///mnt/us/kherdr-0.1.0.kpkg
+   ;kpm install file:///mnt/us/kherdr.kpkg
    ```
 
 4. Open **Kherdr Terminal** in the library, or enter:
@@ -41,11 +41,11 @@ The library entry lists `theblazehen` as its author. If it does not appear, use 
 
 ### Update or uninstall
 
-Quit the app before updating. For a local-file update with KPM 0.2.2, uninstall the current package, then install the new file:
+Download the new package from the [latest release](https://github.com/theblazehen/kherdr/releases/latest), rename it to `kherdr.kpkg`, and copy it to the root of the Kindle's USB drive. Quit the app before updating. For a local-file update with KPM 0.2.2, uninstall the current package, then install the new file:
 
 ```text
 ;kpm uninstall kherdr
-;kpm install file:///mnt/us/kherdr-0.1.0.kpkg
+;kpm install file:///mnt/us/kherdr.kpkg
 ```
 
 Uninstall keeps your settings, credentials, and Herdr sessions. Reinstall uses the same data. Existing sessions keep using their retained server binary until you restart them.
