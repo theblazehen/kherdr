@@ -197,6 +197,7 @@ def main():
                 shutil.copyfile(checkout / filename, notice / "source" / filename)
             collect_notices(vendor, notice / "dependencies")
             collect_notices(sources / "dependencies/zig", notice / "dependencies/zig")
+            collect_notices(source / "vendor", notice / "dependencies/upstream-vendor")
             shutil.copytree(ghostty / "include", notice / "source/ghostty-headers")
             shutil.copyfile(ghostty / "LICENSE", notice / "source/GHOSTTY-LICENSE")
         package = output / f"kherdr-{version}.kpkg"

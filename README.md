@@ -21,7 +21,7 @@ For remote terminals, you need Wi-Fi access to an SSH server and an account on t
 
 ## Install
 
-These steps require a complete `kherdr-0.1.0.kpkg` from the [package builder](tools/package-rust.py).
+Download the `.kpkg` from [Releases](https://github.com/theblazehen/kherdr/releases). For development builds, open a successful [CI run](https://github.com/theblazehen/kherdr/actions/workflows/release.yml), download its **kherdr-kindle** artifact, and extract the `.kpkg` from the ZIP.
 
 1. Back up existing kherdr settings and quit the app.
 2. Copy the `.kpkg` to the root of the Kindle's USB drive. Keep it as an archive.
