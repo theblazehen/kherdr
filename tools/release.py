@@ -107,9 +107,14 @@ def main():
     ref = os.environ.get("GITHUB_REF", "")
     if ref.startswith("refs/tags/") and ref != f"refs/tags/v{version}":
         raise RuntimeError("Release tag must match Cargo.toml version")
+    run(["git", "diff", "--exit-code", "HEAD", "--"])
+    untracked = run(["git", "ls-files", "--others", "--exclude-standard"], capture=True)
+    if untracked.strip():
+        raise RuntimeError("Commit release inputs before building the source archive")
     run(["mise", "install", "rust@1.92.0", "zig@0.15.2"])
     rust = ["mise", "exec", "rust@1.92.0", "--"]
     run(rust + ["rustup", "target", "add", TARGET])
+    run(rust + ["rustup", "component", "add", "rustfmt", "--toolchain", "1.92.0"])
     archive = cache / "kindlehf-2026.08.tar.zst"
     if not archive.exists() or digest(archive) != TOOLCHAIN_SHA256:
         download(TOOLCHAIN_URL, archive)
