@@ -1,0 +1,74 @@
+[package]
+name = "kherdr"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.92"
+license = "GPL-3.0-or-later"
+autobins = false
+
+[features]
+terminal = ["dep:bindgen"]
+
+[[bin]]
+name = "slint-device-probe"
+path = "probe/slint-device.rs"
+
+[[bin]]
+name = "kherdr-ui-preview"
+path = "probe/ui-preview.rs"
+
+[[bin]]
+name = "auth-native-probe"
+path = "probe/auth-native.rs"
+
+[[bin]]
+name = "host-session-probe"
+path = "probe/host-session-probe.rs"
+
+[[bin]]
+name = "x11-device-probe"
+path = "probe/x11-device.rs"
+
+[[bin]]
+name = "clipboard-device-owner"
+path = "probe/clipboard-device-owner.rs"
+
+[[bin]]
+name = "terminal-rust-probe"
+path = "probe/terminal-rust.rs"
+required-features = ["terminal"]
+
+[[bin]]
+name = "kherdr"
+path = "src/main.rs"
+required-features = ["terminal"]
+
+[dependencies]
+slint = { version = "=1.17.1", default-features = false, features = ["std", "compat-1-2", "renderer-software", "unstable-fontique-010"] }
+# Match Slint's font discovery backend and use its supported runtime loader.
+fontique = { version = "=0.10.0", features = ["fontconfig-dlopen"] }
+libc = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+base64 = "0.22"
+png = "=0.18.1"
+x11-dl = "2.21"
+x11rb = "0.13"
+russh = { version = "=0.63.2", default-features = false, features = ["ring", "rsa", "flate2"] }
+tokio = { version = "1", features = ["rt", "net", "io-util", "sync", "time", "macros"] }
+unicode-width = "=0.2.2"
+rand = "0.10"
+zeroize = "1"
+rsa = "=0.10.0-rc.18"
+hmac = "0.12"
+sha1 = "0.10"
+
+[build-dependencies]
+bindgen = { version = "0.72", optional = true }
+
+[profile.release]
+opt-level = "s"
+lto = "thin"
+codegen-units = 1
+strip = "debuginfo"
+

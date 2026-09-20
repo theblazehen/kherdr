@@ -1,0 +1,281 @@
+import { Theme } from "theme.slint";
+import { TouchKey, KeyRow } from "models.slint";
+
+export global PointerTiming {
+    callback release-duration-ms() -> int;
+}
+
+export global KeyboardInteraction {
+    in-out property <int> generation;
+}
+
+component KeyboardKey inherits Rectangle {
+    in property <TouchKey> key;
+    in property <bool> input-ready;
+    in property <length> unit-width;
+    in property <length> hit-left;
+    in property <length> hit-right;
+    in property <length> hit-top;
+    in property <length> hit-bottom;
+    changed key => { touch.cancel-press(); }
+    private property <int> interaction-generation: KeyboardInteraction.generation;
+    changed interaction-generation => { touch.cancel-press(); }
+    private property <bool> inert: root.key.id == "";
+    private property <bool> layer: root.key.id == "symbols" || root.key.id == "functions";
+    private property <string> label: touch.alternate ? root.key.secondary : root.key.label;
+    private property <bool> inverted: root.input-ready && (root.key.active || touch.candidate);
+    private property <bool> special: root.key.id == "shift"
+        || root.key.id == "backspace" || root.key.id == "enter"
+        || root.key.id == "symbols" || root.key.id == "functions";
+    callback activated();
+    callback text(value: string);
+    width: root.unit-width * root.key.stretch + Theme.unit * (root.key.stretch - 1);
+    horizontal-stretch: 0;
+    background: root.inert ? Theme.clear : root.inverted ? Theme.ink : Theme.paper;
+    border-width: !root.inert && focus.has-focus ? Theme.rule : 0px;
+    border-color: Theme.ink;
+    accessible-role: button;
+    accessible-label: (root.layer ? (root.key.label == "ABC" ? "Return to letters"
+        : root.key.label == "123" ? "Numbers and symbols" : "Function keys")
+        : root.key.id == " " ? "Space" : root.key.id == "enter" ? "Return"
+        : root.key.id == "shift" ? (root.key.label == "⇪" ? "Caps lock; tap to unlock" : root.key.active ? "Shift, latched for next key; tap again to lock capitals" : "Shift; double tap to lock capitals")
+        : root.key.id == "ctrl" ? (root.key.active ? "Control, latched for next key; tap to release" : "Control")
+        : root.key.id == "alt" ? (root.key.active ? "Alt, latched for next key; tap to release" : "Alt")
+        : root.key.id == "backspace" ? "Backspace; hold to repeat" : root.key.label)
+        + (root.key.secondary != "" ? "; hold for " + root.key.secondary : "");
+    accessible-enabled: !root.inert && root.input-ready;
+    accessible-action-default => { if !root.inert && root.input-ready { root.activated(); } }
+    forward-focus: focus;
+    if root.key.id == " ": Rectangle {
+        x: Theme.gap;
+        y: (parent.height - self.height) / 2;
+        width: parent.width - Theme.gap * 2;
+        height: Theme.space-height;
+        border-radius: Theme.key-radius;
+        border-width: Theme.rule;
+        border-color: root.inverted ? Theme.paper : Theme.ink;
+        background: Theme.clear;
+    }
+    if !root.inert: VerticalLayout {
+        padding: Theme.unit;
+        spacing: 0px;
+        if root.key.secondary != "": Text {
+            height: Theme.type-legend;
+            text: touch.alternate ? "" : root.key.secondary;
+            color: root.inverted ? Theme.paper : Theme.ink;
+            font-size: Theme.type-legend;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+        Text {
+            text: root.label;
+            color: root.inverted ? Theme.paper : Theme.ink;
+            font-size: root.special ? Theme.type-key : root.key.id == "home" || root.key.id == "pageup" || root.key.id == "pagedown" ? 30px : Theme.type-letter;
+            font-weight: root.key.active || root.key.id == "enter" ? 700 : 400;
+            font-italic: !root.input-ready;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+    focus := FocusScope {
+        enabled: !root.inert && root.input-ready;
+        key-pressed(event) => {
+            if event.text == " " || event.text == Key.Return {
+                root.activated();
+                return accept;
+            }
+            return reject;
+        }
+    }
+    touch := TouchArea {
+        x: -root.hit-left;
+        y: -root.hit-top;
+        width: root.width + root.hit-left + root.hit-right;
+        height: root.height + root.hit-top + root.hit-bottom;
+        enabled: !root.inert && root.input-ready;
+        private property <bool> candidate: false;
+        private property <bool> alternate: false;
+        private property <bool> repeated: false;
+        private property <int> press-generation;
+        private property <length> anchor-x;
+        private property <length> anchor-y;
+        changed enabled => { if !self.enabled { self.cancel-press(); } }
+        function cancel-press() {
+            hold.stop();
+            repeat.stop();
+            self.candidate = false;
+            self.alternate = false;
+            self.repeated = false;
+        }
+        function track-press() {
+            if !self.enabled || self.press-generation != KeyboardInteraction.generation {
+                self.cancel-press();
+            } else if self.mouse-x < 0px || self.mouse-x >= self.width
+                || self.mouse-y < 0px || self.mouse-y >= self.height
+                || max(self.mouse-x - self.anchor-x, self.anchor-x - self.mouse-x) > Theme.key-hold-slop
+                || max(self.mouse-y - self.anchor-y, self.anchor-y - self.mouse-y) > Theme.key-hold-slop {
+                self.cancel-press();
+            }
+        }
+        hold := Timer {
+            interval: Theme.key-hold;
+            running: false;
+            triggered => {
+                self.stop();
+                touch.track-press();
+                if touch.enabled && touch.pressed && touch.candidate {
+                    if root.key.id == "backspace" {
+                        touch.repeated = true;
+                        root.activated();
+                        if touch.candidate { repeat.start(); }
+                    } else {
+                        // Punctuation and number holds commit only on release.
+                        touch.alternate = true;
+                    }
+                }
+            }
+        }
+        repeat := Timer {
+            interval: 110ms;
+            running: false;
+            triggered => {
+                // Single-shot rearming: delayed paints never accumulate a burst.
+                self.stop();
+                touch.track-press();
+                if touch.enabled && touch.pressed && touch.candidate {
+                    root.activated();
+                    if touch.candidate { self.start(); }
+                }
+            }
+        }
+        pointer-event(event) => {
+            if event.kind == PointerEventKind.cancel {
+                self.cancel-press();
+            } else if event.button == PointerEventButton.left && event.kind == PointerEventKind.down {
+                self.cancel-press();
+                if self.enabled {
+                    self.press-generation = KeyboardInteraction.generation;
+                    self.anchor-x = self.mouse-x;
+                    self.anchor-y = self.mouse-y;
+                    self.candidate = true;
+                    if root.key.secondary != "" || root.key.id == "backspace" { hold.start(); }
+                }
+            } else if event.button == PointerEventButton.left && event.kind == PointerEventKind.up {
+                self.track-press();
+                let activate = self.enabled && self.candidate;
+                // The timer previews a hold. Only native event timestamps
+                // decide it: rendering may postpone press admission or the
+                // timer callback until after release is already queued.
+                let alternate = root.key.secondary != ""
+                    && PointerTiming.release-duration-ms() * 1ms >= Theme.key-hold;
+                let repeated = self.repeated;
+                self.cancel-press();
+                if activate && !repeated {
+                    if alternate { root.text(root.key.secondary); }
+                    else { root.activated(); }
+                }
+            }
+        }
+        moved => { if self.pressed { self.track-press(); } }
+    }
+}
+
+component KeyboardSection inherits Rectangle {
+    in property <[TouchKey]> keys;
+    in property <length> unit-width;
+    in property <bool> input-ready;
+    in property <length> hit-top;
+    in property <length> hit-bottom;
+    callback key(id: string);
+    callback text(value: string);
+    min-width: 0px;
+    HorizontalLayout {
+        spacing: Theme.unit;
+        for key[index] in root.keys: KeyboardKey {
+            key: key;
+            unit-width: root.unit-width;
+            input-ready: root.input-ready;
+            hit-left: index == 0 ? Theme.unit : Theme.unit / 2;
+            hit-right: index == root.keys.length - 1 ? Theme.unit : Theme.unit / 2;
+            hit-top: root.hit-top;
+            hit-bottom: root.hit-bottom;
+            activated => { if root.input-ready && key.id != "" { root.key(key.id); } }
+            text(value) => { if root.input-ready { root.text(value); } }
+        }
+    }
+}
+
+export component TouchKeyboard inherits Rectangle {
+    in property <[KeyRow]> key-rows;
+    in property <bool> input-ready;
+    callback key(id: string);
+    callback text(value: string);
+    background: Theme.paper;
+    min-width: 0px;
+    preferred-width: 0px;
+    horizontal-stretch: 1;
+    height: Theme.keyboard-height;
+    vertical-stretch: 0;
+    // Thirteen equal targets, ten internal gaps, two section gaps and padding.
+    // Only the window-assigned width drives geometry, never layout preferences.
+    // Slint v1.17.1 internal/core/input.rs::send_mouse_event_to_item visits
+    // children outside an unclipped Rectangle; TouchArea owns its own bounds.
+    // Split each gap at its midpoint, extend edge targets to the keyboard
+    // boundary, and keep the original pointer grab (never retarget a drag).
+    // Geometric rationale: AOSP LatinIME KeyDetector.java::detectHitKey,
+    // enlarged edge hitboxes and distance to key edges, not language guesses.
+    private property <length> unit-width: max(0px, (root.width - Theme.unit * 16) / 13);
+    private property <length> half-width: root.unit-width * 5 + Theme.unit * 4;
+    private property <length> center-width: root.unit-width * 3 + Theme.unit * 2;
+    Rectangle {
+        x: 0px;
+        y: 0px;
+        width: parent.width;
+        height: Theme.hairline;
+        background: Theme.key-rule;
+    }
+    VerticalLayout {
+        padding: Theme.unit;
+        spacing: Theme.unit;
+        for row[index] in root.key-rows: HorizontalLayout {
+            height: Theme.key-height;
+            spacing: Theme.gap;
+            KeyboardSection {
+                width: root.half-width;
+                keys: row.left;
+                unit-width: root.unit-width;
+                hit-top: index == 0 ? Theme.unit : Theme.unit / 2;
+                hit-bottom: index == root.key-rows.length - 1 ? Theme.unit : Theme.unit / 2;
+                input-ready: root.input-ready;
+                key(id) => { root.key(id); }
+                text(value) => { root.text(value); }
+            }
+            KeyboardSection {
+                width: root.center-width;
+                keys: row.center;
+                unit-width: root.unit-width;
+                hit-top: index == 0 ? Theme.unit : Theme.unit / 2;
+                hit-bottom: index == root.key-rows.length - 1 ? Theme.unit : Theme.unit / 2;
+                input-ready: root.input-ready;
+                key(id) => { root.key(id); }
+                text(value) => { root.text(value); }
+            }
+            KeyboardSection {
+                width: root.half-width;
+                keys: row.right;
+                unit-width: root.unit-width;
+                hit-top: index == 0 ? Theme.unit : Theme.unit / 2;
+                hit-bottom: index == root.key-rows.length - 1 ? Theme.unit : Theme.unit / 2;
+                input-ready: root.input-ready;
+                key(id) => { root.key(id); }
+                text(value) => { if root.input-ready { root.text(value); } }
+            }
+        }
+        if root.key-rows.length == 0: Text {
+            text: "Keyboard unavailable";
+            font-size: Theme.type-body;
+            color: Theme.ink;
+            wrap: word-wrap;
+        }
+    }
+}

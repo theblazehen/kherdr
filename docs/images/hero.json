@@ -1,0 +1,24 @@
+{
+  "images": {
+    "hero.png": "e327b20331f063a9a5ef1387e3785ed16e64c2021ea2df574b2945a6c97b0c2d",
+    "hero-machines.png": "86e28c3b4babaab4e651de4cd54a3bac3f1c4bb5ac3584f9acaf980d17ad666f"
+  },
+  "width": 1236,
+  "height": 1648,
+  "caption": "Actual Kindle screenshots of kherdr's native UI, displaying staged, privacy-safe demo content.",
+  "capture": "Unedited Kindle X11 framebuffer captures, not desktop renders or photographs of the physical e-ink panel.",
+  "previewTarget": "kherdr-ui-preview",
+  "previewSource": "probe/ui-preview.rs",
+  "sceneSource": "tools/slint-paper/src/states.rs",
+  "scenes": ["readme-hero", "readme-machines"],
+  "previewBinarySha256": "bfb45f53042260ac356b75ae68f5f4f3eec35697545b49c9df4a107cd868ba1c",
+  "reproduction": [
+    "Cross-build the kherdr-ui-preview target with the normal Kindle toolchain.",
+    "Run the preview on the Kindle with DISPLAY=:0 and either scene argument. It never loads user configuration or opens network sessions.",
+    "Use the normal launcher's bounded keep-awake and restoration lifecycle while preparing captures; do not leave sleep inhibition enabled permanently.",
+    "Wait for window-ready and inspect the actual display before capture.",
+    "Capture with DISPLAY=:0 /usr/sbin/screenshot -x -f OUTPUT.png.",
+    "The Machines screenshot can also be reached by tapping the navigator button in readme-hero."
+  ],
+  "privacy": "All terminal text, tab labels, host identities, agent states, time and battery values are synthetic preview data. No private font files, personal device captures, credentials, or build-environment paths are included. Both PNGs contain only IHDR, IDAT and IEND chunks."
+}

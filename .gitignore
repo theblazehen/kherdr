@@ -1,0 +1,15 @@
+# Private operational handoffs are not public project documentation.
+/INIT.md
+/handoff/
+/.recovery/
+/.crabbox/
+/.app-audit.org
+/docs/trees/
+/target/
+/dist/
+**/__pycache__/
+/kindle.pkg/bin/dbclient
+/probe/auth-server.py
+/probe/host-sessions.py
+/probe/kitty-gallery.py
+/probe/graphics-corpus.py

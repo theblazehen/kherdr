@@ -1,0 +1,21 @@
+[package]
+name = "kherdr-slint-paper"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.92"
+license = "GPL-3.0-or-later"
+publish = false
+
+[workspace]
+
+[dependencies]
+slint = { version = "=1.17.1", default-features = false, features = ["std", "compat-1-2", "renderer-software", "unstable-fontique-010"] }
+i-slint-core = { version = "=1.17.1", default-features = false, features = ["std"] }
+fontique = { version = "=0.10.0", features = ["fontconfig-dlopen"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+png = "=0.18.1"
+base64 = "0.22"
+
+[profile.dev]
+debug = 0

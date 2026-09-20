@@ -1,0 +1,67 @@
+export struct HostView { id: string, name: string, endpoint: string, state: string, detail: string, selected: bool, open: bool, local: bool, needs_attention: bool }
+export struct OpenSessionView { id: string, host_id: string, host_name: string, name: string, kind: string, state: string, selected: bool }
+export struct HostSessionView { name: string, id: string, state: string, detail: string, checked: bool, available: bool, can_retry: bool }
+export struct ConnectionDraft {
+    id: string, name: string, host: string, user: string, port: string,
+    identity: string, command: string, auth_method: string,
+    keepalive: string, compression: bool,
+    session_kind: string, herdr_session: string, herdr_binary: string,
+}
+export struct KeyView { id: string, name: string, detail: string, path: string }
+export struct TrustedHostView { id: string, host: string, algorithm: string, fingerprint: string }
+export struct FileView { path: string, name: string, directory: bool }
+export struct TabView {
+    tab_id: string,
+    name: string,
+    status: string,
+    selected: bool,
+}
+export struct SidebarRow {
+    endpoint_id: string,
+    available: bool,
+    label: string,
+    resource_name: string,
+    detail: string,
+    status: string,
+    pane_id: string,
+    workspace_id: string,
+    can_zoom: bool,
+    zoomed: bool,
+    can_swap: bool,
+    custom_label: bool,
+    worktree_linked: bool,
+    worktree_key:string,
+    has_worktree_children:bool,
+    group_collapsed:bool,
+    selected: bool,
+}
+export struct MachineRow {
+    endpoint_id: string,
+    machine: bool,
+    local: bool,
+    expanded: bool,
+    enabled: bool,
+    entry: SidebarRow,
+}
+export struct CellView {
+    column: int,
+    span: int,
+    text: string,
+    foreground: color,
+    background: color,
+    background_is_default: bool,
+    bold: bool,
+    italic: bool,
+    underline: bool,
+    strikethrough: bool,
+}
+export struct BackgroundRun { column: int, span: int, background: color }
+export struct RowView {
+    index: int,
+    cells: [CellView],
+    glyphs: [CellView],
+    backgrounds: [BackgroundRun],
+}
+export struct ImageView { x: int, y: int, width: int, height: int, source: image }
+export struct TouchKey { id: string, label: string, secondary: string, active: bool, stretch: float }
+export struct KeyRow { left: [TouchKey], center: [TouchKey], right: [TouchKey] }

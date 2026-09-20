@@ -1,0 +1,398 @@
+import { Theme } from "theme.slint";
+import { CellView, TabView, SidebarRow } from "models.slint";
+
+export component Glyph inherits Image {
+    in property <string> name;
+    in property <color> ink: Theme.ink;
+    private property <image> empty;
+    width: Theme.icon-size; height: Theme.icon-size;
+    image-fit: contain; colorize: root.ink;
+    source: root.name == "workspaces" ? @image-url("icons/workspaces.svg")
+        : root.name == "plus" ? @image-url("icons/plus.svg")
+        : root.name == "menu" ? @image-url("icons/menu.svg")
+        : root.name == "more" ? @image-url("icons/more.svg")
+        : root.name == "keyboard" ? @image-url("icons/keyboard.svg")
+        : root.name == "close" ? @image-url("icons/close.svg")
+        : root.name == "back" ? @image-url("icons/back.svg")
+        : root.name == "down" ? @image-url("icons/down.svg")
+        : root.name == "chevron" ? @image-url("icons/chevron.svg")
+        : root.name == "monitor" ? @image-url("icons/monitor.svg")
+        : root.name == "kindle" ? @image-url("icons/kindle.svg")
+        : root.name == "terminal" ? @image-url("icons/terminal.svg")
+        : root.name == "settings" ? @image-url("icons/settings.svg")
+        : root.name == "help" ? @image-url("icons/help.svg")
+        : root.name == "key" ? @image-url("icons/key.svg")
+        : root.name == "shield" ? @image-url("icons/shield.svg")
+        : root.name == "warning" ? @image-url("icons/warning.svg")
+        : root.name == "check" ? @image-url("icons/check.svg")
+        : root.name == "play" ? @image-url("icons/play.svg")
+        : root.name == "rename" ? @image-url("icons/rename.svg")
+        : root.name == "split" ? @image-url("icons/split.svg")
+        : root.name == "splitDown" ? @image-url("icons/splitDown.svg")
+        : root.name == "zoom" ? @image-url("icons/zoom.svg")
+        : root.name == "trash" ? @image-url("icons/trash.svg")
+        : root.name == "book" ? @image-url("icons/book.svg")
+        : root.name == "swipe" ? @image-url("icons/swipe.svg")
+        : root.name == "radioOff" ? @image-url("icons/radioOff.svg")
+        : root.name == "copy" ? @image-url("icons/copy.svg")
+        : root.name == "quit" ? @image-url("icons/quit.svg")
+        : root.name == "reload" ? @image-url("icons/reload.svg") : root.empty;
+}
+
+export component CellGlyph inherits Rectangle {
+    in property <CellView> cell;
+    in property <color> ink;
+    in property <string> family;
+    in property <float> size;
+    clip: true;
+    Text {
+        width: parent.width;
+        height: parent.height;
+        text: root.cell.text;
+        color: root.ink;
+        font-family: root.family;
+        font-size: root.size * 1phx;
+        font-weight: root.cell.bold ? 700 : 400;
+        font-italic: root.cell.italic;
+        horizontal-alignment: left;
+        vertical-alignment: center;
+        wrap: no-wrap;
+        overflow: clip;
+    }
+    Rectangle {
+        visible: root.cell.underline;
+        y: parent.height - Theme.rule;
+        height: Theme.rule;
+        background: root.ink;
+    }
+    Rectangle {
+        visible: root.cell.strikethrough;
+        y: (parent.height - Theme.rule) / 2;
+        height: Theme.rule;
+        background: root.ink;
+    }
+}
+
+export component TouchButton inherits Rectangle {
+    in property <string> label;
+    in property <string> icon;
+    in property <bool> plain: false;
+    in property <bool> subtle: false;
+    in property <bool> enabled: true;
+    in property <bool> active: false;
+    in property <length> text-size: Theme.type-body;
+    in property <TextHorizontalAlignment> text-alignment: center;
+    callback activated();
+    min-width: Theme.touch-min;
+    min-height: Theme.touch-min;
+    preferred-width: 0px;
+    horizontal-stretch: 1;
+    vertical-stretch: 0;
+    private property <bool> inverted: root.enabled && root.active;
+    background: root.inverted ? Theme.ink : Theme.paper;
+    border-color: root.enabled && (!root.subtle || focus.has-focus || feedback.running || touch.pressed || root.inverted) ? Theme.ink : Theme.separator;
+    border-width: feedback.running || touch.pressed ? 3px : focus.has-focus ? Theme.rule : root.plain ? 0px : root.subtle ? Theme.hairline : Theme.rule;
+    border-radius: Theme.radius;
+    accessible-role: button;
+    accessible-label: root.label;
+    accessible-enabled: root.enabled;
+    accessible-action-default => { if root.enabled { root.activated(); } }
+    forward-focus: focus;
+    HorizontalLayout {
+        padding: Theme.inset; spacing: Theme.inset;
+        if root.icon != "": Rectangle {
+            width: Theme.icon-size;
+            Glyph { name: root.icon; ink: root.inverted ? Theme.paper : root.enabled ? Theme.ink : Theme.disabled; y: (parent.height - self.height) / 2; }
+        }
+        Text {
+            text: root.label;
+            color: root.inverted ? Theme.paper : root.enabled ? Theme.ink : Theme.disabled;
+            font-size: root.text-size; font-weight: 700;
+            horizontal-alignment: root.icon == "" ? root.text-alignment : left;
+            vertical-alignment: center; wrap: word-wrap;
+        }
+    }
+    focus := FocusScope {
+        enabled: root.enabled;
+        focus-on-click: false;
+        key-pressed(event) => {
+            if event.text == " " || event.text == Key.Return {
+                root.activated();
+                return accept;
+            }
+            return reject;
+        }
+    }
+    feedback := Timer { interval: Theme.action-feedback; running: false; triggered => { self.stop(); } }
+    touch := TouchArea {
+        enabled: root.enabled;
+        clicked => { feedback.restart(); root.activated(); }
+    }
+}
+
+export component SessionCheck inherits Rectangle {
+    in property <bool> checked;
+    in property <bool> enabled: true;
+    in property <string> label;
+    callback toggled();
+    width: Theme.touch; height: Theme.touch;
+    accessible-role: checkbox;
+    accessible-label: root.label;
+    accessible-checked: root.checked;
+    accessible-enabled: root.enabled;
+    accessible-action-default => { if root.enabled { root.toggled(); } }
+    forward-focus: focus;
+    border-width: focus.has-focus ? Theme.rule : 0px;
+    border-color: Theme.ink;
+    Rectangle {
+        x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2;
+        width: Theme.icon-size; height: Theme.icon-size;
+        border-width: Theme.rule; border-color: Theme.ink;
+        background: root.checked ? Theme.ink : Theme.paper;
+        Text {
+            text: root.checked ? "✓" : ""; color: Theme.paper;
+            font-size: Theme.type-body; horizontal-alignment: center; vertical-alignment: center;
+        }
+    }
+    focus := FocusScope {
+        enabled: root.enabled;
+        key-pressed(event) => {
+            if event.text == " " || event.text == Key.Return { root.toggled(); return accept; }
+            return reject;
+        }
+    }
+    TouchArea { enabled: root.enabled; clicked => { focus.focus(); root.toggled(); } }
+}
+
+export component IconButton inherits Rectangle {
+    in property <string> icon;
+    in property <string> label;
+    in property <bool> active: false;
+    in property <bool> enabled: true;
+    callback activated();
+    width: Theme.touch;
+    height: Theme.touch;
+    private property <bool> inverted: root.enabled && root.active;
+    private property <color> ink: root.inverted ? Theme.paper : root.enabled ? Theme.ink : Theme.disabled;
+    background: root.inverted ? Theme.ink : Theme.clear;
+    border-color: Theme.ink;
+    border-width: feedback.running || touch.pressed ? 3px : focus.has-focus ? Theme.rule : 0px;
+    border-radius: Theme.radius;
+    accessible-role: button;
+    accessible-label: root.label;
+    accessible-enabled: root.enabled;
+    accessible-action-default => { if root.enabled { root.activated(); } }
+    forward-focus: focus;
+    Glyph {
+        x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2;
+        name: root.icon; ink: root.ink;
+    }
+    focus := FocusScope {
+        focus-on-click: false;
+        enabled: root.enabled;
+        key-pressed(event) => {
+            if event.text == " " || event.text == Key.Return {
+                root.activated();
+                return accept;
+            }
+            return reject;
+        }
+    }
+    feedback := Timer { interval: Theme.action-feedback; running: false; triggered => { self.stop(); } }
+    touch := TouchArea {
+        enabled: root.enabled;
+        clicked => { feedback.restart(); root.activated(); }
+    }
+}
+
+export component StateGlyph inherits Rectangle {
+    in property <string> status;
+    in property <color> ink: Theme.ink;
+    out property <string> status-label: root.status == "working" ? "Working"
+        : root.status == "blocked" ? "Needs input"
+        : root.status == "done" ? "Done"
+        : root.status == "idle" ? "Idle"
+        : root.status == "" || root.status == "unknown" ? "Unknown" : root.status;
+    accessible-role: image;
+    accessible-label: root.status-label;
+    Glyph {
+        width: min(parent.width, Theme.icon-size); height: self.width;
+        x: (parent.width - self.width) / 2; y: (parent.height - self.height) / 2;
+        name: root.status == "working" ? "play" : root.status == "blocked" ? "warning" : root.status == "done" ? "check" : "radioOff";
+        ink: root.ink;
+    }
+}
+
+export component TabVisibilityObserver inherits Rectangle {
+    in property <bool> selected;
+    in property <length> left;
+    in property <length> tab-width;
+    in property <length> viewport-width;
+    callback reveal(left: length, width: length);
+    width: 0px;
+    height: 0px;
+    changed selected => { if root.selected { root.reveal(root.left, root.tab-width); } }
+    changed left => { if root.selected { root.reveal(root.left, root.tab-width); } }
+    changed tab-width => { if root.selected { root.reveal(root.left, root.tab-width); } }
+    changed viewport-width => { if root.selected { root.reveal(root.left, root.tab-width); } }
+    init => { if root.selected { root.reveal(root.left, root.tab-width); } }
+}
+
+export component NativeTab inherits Rectangle {
+    in property <TabView> tab;
+    in property <string> host_name;
+    callback activated();
+    callback menu-requested();
+    width: max(Theme.touch + Theme.close-width, min(Theme.tab-width-max,
+        max(title.preferred-width, status.preferred-width) + Theme.inset + Theme.close-width));
+    horizontal-stretch: 0;
+    background: root.tab.selected ? Theme.selection : Theme.paper;
+    border-color: Theme.ink;
+    border-width: root.tab.selected || focus.has-focus ? Theme.rule : 0px;
+    border-radius: Theme.radius;
+    accessible-role: button;
+    accessible-label: root.host_name + " · " + (root.tab.name == "" ? "Tab" : root.tab.name) + ": " + state.status-label
+        + (root.tab.selected ? ", selected" : "");
+    accessible-action-default => { root.activated(); }
+    forward-focus: focus;
+    state := StateGlyph { visible: false; status: root.tab.status; }
+    VerticalLayout {
+        padding-left: Theme.inset; padding-right: Theme.close-width;
+        spacing: 0px; alignment: center;
+        title := Text {
+            text: root.tab.name == "" ? "Tab" : root.tab.name;
+            color: Theme.ink; font-size: Theme.type-body; font-weight: 700;
+            wrap: no-wrap; overflow: elide;
+        }
+        status := Text {
+            text: state.status-label; color: Theme.secondary;
+            font-size: Theme.type-small; wrap: no-wrap; overflow: elide;
+        }
+    }
+    focus := FocusScope {
+        focus-on-click: false;
+        key-pressed(event) => {
+            if event.text == " " || event.text == Key.Return {
+                root.activated();
+                return accept;
+            }
+            return reject;
+        }
+    }
+    touch := TouchArea {
+        width: parent.width - Theme.close-width;
+        clicked => { root.activated(); }
+    }
+    IconButton {
+        x: parent.width - self.width;
+        width: Theme.close-width;
+        height: parent.height;
+        icon: "more";
+        label: "Tab actions for " + root.tab.name;
+        activated => { root.menu-requested(); }
+    }
+    // The tab perimeter includes its own menu target.
+    Rectangle {
+        width: parent.width; height: parent.height;
+        background: Theme.clear; border-color: Theme.ink;
+        border-width: root.tab.selected || focus.has-focus ? Theme.rule : 0px;
+        border-radius: Theme.radius;
+    }
+}
+
+export component PaneRow inherits Rectangle {
+    in property <SidebarRow> entry;
+    in property <bool> enabled: true;
+    in property <bool> agent-row: false;
+    in property <bool> show-menu: true;
+    callback activated();
+    callback menu-requested();
+    height: root.agent-row ? Theme.touch + Theme.gap : Theme.chrome-height;
+    background: root.entry.selected || touch.pressed ? Theme.selection : Theme.clear;
+    border-color: Theme.ink; border-width: focus.has-focus ? Theme.rule : 0px;
+    border-radius: Theme.radius;
+    accessible-role: button; accessible-enabled: root.enabled;
+    accessible-label: root.entry.label + ", " + root.entry.detail + ", " + state.status-label + (root.entry.selected ? ", selected" : "");
+    accessible-action-default => { if root.enabled { root.activated(); } }
+    forward-focus: focus;
+    state := StateGlyph { x: 12px; y: 12px; width: 28px; height: 48px; status: root.entry.status; ink: root.enabled ? Theme.ink : Theme.disabled; }
+    Text {
+        x: 56px; y: Theme.gap; width: parent.width - self.x - (root.show-menu ? Theme.touch : Theme.inset); height: 38px;
+        text: root.agent-row ? root.entry.detail : root.entry.label;
+        color: root.enabled ? (root.agent-row ? Theme.secondary : Theme.ink) : Theme.disabled;
+        font-size: root.agent-row ? Theme.type-small : Theme.type-body;
+        font-weight: root.agent-row ? 400 : 700; wrap: no-wrap; overflow: elide;
+    }
+    Text {
+        x: 56px; y: 49px; width: (root.agent-row ? parent.width / 2 : parent.width - (root.show-menu ? Theme.touch : Theme.inset)) - self.x; height: 38px;
+        text: root.agent-row ? root.entry.label : root.entry.detail;
+        color: root.enabled ? (root.agent-row ? Theme.ink : Theme.secondary) : Theme.disabled;
+        font-size: root.agent-row ? Theme.type-body : Theme.type-small;
+        font-weight: root.agent-row ? 700 : 400; wrap: no-wrap; overflow: elide;
+    }
+    if root.agent-row: Text {
+        x: parent.width / 2 + Theme.gap; y: 49px; width: parent.width - self.x - Theme.inset; height: 38px;
+        text: state.status-label; color: root.enabled ? Theme.ink : Theme.disabled;
+        font-size: Theme.type-small; wrap: no-wrap; overflow: elide;
+    }
+    focus := FocusScope {
+        enabled: root.enabled;
+        key-pressed(event) => {
+            if event.text == " " || event.text == Key.Return { root.activated(); return accept; }
+            return reject;
+        }
+    }
+    touch := TouchArea {
+        enabled: root.enabled; width: parent.width - (root.show-menu ? Theme.touch : 0px);
+        clicked => { focus.focus(); root.activated(); }
+    }
+    if root.show-menu: IconButton {
+        x: parent.width - Theme.touch; width: Theme.touch; height: parent.height;
+        icon: "more"; label: (root.entry.pane_id == "" ? "Workspace" : "Pane") + " actions for " + root.entry.label;
+        enabled: root.enabled; activated => { root.menu-requested(); }
+    }
+}
+
+export component ConnectionField inherits Rectangle {
+    in property <string> label;
+    in property <bool> enabled: false;
+    in property <bool> secret: false;
+    in property <bool> multiline: false;
+    in-out property <bool> revealed: false;
+    in-out property <string> value;
+    out property <bool> input-focused: input.has-focus;
+    callback focused();
+    height: root.multiline ? Theme.touch * 2 : Theme.touch;
+    forward-focus: input;
+    HorizontalLayout {
+        spacing: Theme.inset;
+        Text { width: min(176px, root.width * 0.28); text: root.label; color: Theme.ink; font-size: Theme.type-small; vertical-alignment: center; wrap: word-wrap; }
+        Rectangle {
+            height: root.multiline ? Theme.touch * 2 : Theme.touch;
+            border-width: input.has-focus ? Theme.rule : Theme.hairline;
+            border-color: input.has-focus ? Theme.ink : Theme.separator;
+            border-radius: Theme.radius;
+            background: Theme.surface;
+            input := TextInput {
+                x: Theme.inset; y: Theme.gap;
+                width: parent.width - Theme.inset * 2 - (root.secret ? Theme.touch * 1.4 : 0px);
+                height: parent.height - Theme.gap * 2;
+                enabled: root.enabled;
+                text <=> root.value;
+                color: Theme.ink;
+                font-size: Theme.type-body;
+                single-line: !root.multiline;
+                input-type: root.secret && !root.revealed ? password : text;
+                vertical-alignment: center;
+                accessible-label: root.label;
+                changed has-focus => { if self.has-focus { root.focused(); } }
+            }
+            if root.secret: TouchButton {
+                x: parent.width - Theme.touch * 1.4; width: Theme.touch * 1.4; height: parent.height;
+                label: root.revealed ? "Hide" : "Show"; enabled: root.enabled;
+                plain: true;
+                activated => { root.revealed = !root.revealed; input.focus(); }
+            }
+        }
+    }
+}
